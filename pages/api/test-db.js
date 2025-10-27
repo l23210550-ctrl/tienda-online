@@ -1,6 +1,6 @@
 // ✅ /api/test-db.js — Verifica conexión SQL Server
 import sql from "mssql";
-import { dbConfig } from "../../lib/dbConfig.js"; // o utils/dbConfig.js según tu estructura
+import { dbConfig } from "../../lib/dbconfig.js"; // o utils/dbConfig.js según tu estructura
 
 export default async function handler(req, res) {
   try {
