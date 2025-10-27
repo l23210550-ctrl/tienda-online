@@ -8,10 +8,6 @@ export default function AdminUsuarios() {
   const [mensaje, setMensaje] = useState("");
   const router = useRouter();
 
-  const azul = "#1B396A";
-  const gris = "#807E82";
-  const naranja = "#FF8C00";
-
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || user.rol !== "admin") {
@@ -64,19 +60,17 @@ export default function AdminUsuarios() {
 
   return (
     <div style={styles.container}>
-      <header style={styles.header}>
-        <h1 style={{ color: "#fff" }}>👥 Administración de Usuarios</h1>
-      </header>
-    <div>
       <AdminNavbar />
-      {/* Contenido del panel */}
-    </div>
-      {mensaje && <p style={{ color: "red", textAlign: "center" }}>{mensaje}</p>}
+      <header style={styles.header}>
+        <h1 style={styles.title}>👥 Administración de Usuarios - ONYX</h1>
+      </header>
+
+      {mensaje && <p style={styles.alert}>{mensaje}</p>}
 
       <div style={styles.tableContainer}>
         <table style={styles.table}>
           <thead>
-            <tr style={{ background: azul, color: "#fff" }}>
+            <tr style={styles.tableHeader}>
               <th>ID</th>
               <th>Nombre</th>
               <th>Email</th>
@@ -86,7 +80,7 @@ export default function AdminUsuarios() {
           </thead>
           <tbody>
             {usuarios.map((u) => (
-              <tr key={u.ID_Usuario}>
+              <tr key={u.ID_Usuario} style={styles.row}>
                 <td>{u.ID_Usuario}</td>
                 <td>{u.Nombre}</td>
                 <td>{u.Email}</td>
@@ -117,42 +111,70 @@ export default function AdminUsuarios() {
   );
 }
 
+/* 🎨 Paleta ONYX (rosa–vino) */
 const styles = {
   container: {
-    fontFamily: "sans-serif",
-    background: "#f5f5f5",
+    fontFamily: "Poppins, sans-serif",
+    background: "var(--color1)",
     minHeight: "100vh",
     paddingBottom: "30px",
+    color: "#fff",
   },
   header: {
-    background: "#1B396A",
-    padding: "15px",
+    background: "linear-gradient(135deg, var(--color5), var(--color3))",
+    padding: "20px",
     textAlign: "center",
+    borderBottom: "4px solid var(--color4)",
+  },
+  title: {
+    color: "#fff",
+    fontSize: "1.8rem",
+    fontWeight: "bold",
+  },
+  alert: {
+    color: "var(--color5)",
+    textAlign: "center",
+    fontWeight: "bold",
   },
   tableContainer: {
-    maxWidth: "900px",
-    margin: "30px auto",
+    maxWidth: "950px",
+    margin: "40px auto",
     background: "#fff",
-    borderRadius: "8px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+    borderRadius: "10px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
     overflowX: "auto",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
   },
+  tableHeader: {
+    background: "var(--color4)",
+    color: "#fff",
+    textTransform: "uppercase",
+    letterSpacing: "1px",
+  },
+  row: {
+    textAlign: "center",
+    color: "#000",
+    borderBottom: "1px solid #ddd",
+  },
   select: {
-    padding: "5px",
-    border: "1px solid #ccc",
-    borderRadius: "4px",
+    padding: "6px",
+    border: "1px solid var(--color3)",
+    borderRadius: "6px",
     marginRight: "10px",
+    background: "#fff",
+    color: "#000",
+    fontWeight: "bold",
   },
   deleteBtn: {
-    background: "red",
+    background: "var(--color5)",
     color: "#fff",
     border: "none",
-    borderRadius: "4px",
+    borderRadius: "5px",
     cursor: "pointer",
     padding: "6px 10px",
+    transition: "transform 0.2s ease, background 0.3s ease",
   },
 };

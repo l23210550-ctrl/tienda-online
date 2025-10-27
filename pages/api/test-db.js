@@ -1,27 +1,14 @@
+// ✅ /api/test-db.js — Verifica conexión SQL Server
 import sql from "mssql";
-import { dbConfig } from "../../lib/dbconfig";
-
-
+import { dbConfig } from "../../lib/dbConfig.js"; // o utils/dbConfig.js según tu estructura
 
 export default async function handler(req, res) {
   try {
-    console.log("🟡 Intentando conectar a SQL Server...");
-
     const pool = await sql.connect(dbConfig);
-
-    // Consulta simple para verificar la conexión
-    const result = await pool.request().query("SELECT GETDATE() AS FechaActual");
-
-    console.log("🟢 Conexión exitosa a SQL Server");
-    res.status(200).json({
-      message: "Conexión exitosa a SQL Server ✅",
-      fechaServidor: result.recordset[0].FechaActual,
-    });
+    const result = await pool.request().query("SELECT TOP 1 Nombre FROM Usuarios");
+    res.status(200).json({ success: true, message: "Conexión exitosa 🎉", result: result.recordset });
   } catch (error) {
-    console.error("🔴 Error al conectar con SQL Server:", error);
-    res.status(500).json({
-      error: "Error al conectar con SQL Server",
-      detalle: error.message,
-    });
+    console.error("❌ Error de conexión SQL:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 }

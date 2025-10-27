@@ -1,163 +1,113 @@
-/* 🎨 Variables de color institucional TecNM */
 :root {
-  --azul: #1B396A;
-  --gris: #807E82;
-  --negro: #000000;
-  --naranja: #FF8C00;
-  --fondo: #f5f5f5;
-  --blanco: #ffffff;
+  --color1: #ffaac5; /* rosa pastel */
+  --color2: #d785a2; /* rosa medio */
+  --color3: #af607e; /* rosa intenso */
+  --color4: #873c5a; /* vino suave */
+  --color5: #5f1736; /* vino oscuro */
+  --texto: #2b2b2b;
+  --transicion: 0.3s ease;
 }
 
-/* 🔹 Reset básico */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* 🔹 Fuente base */
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: var(--fondo);
-  color: var(--negro);
-  line-height: 1.6;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--color1);
+  color: var(--texto);
 }
 
-/* 🔹 Encabezados */
-h1, h2, h3, h4 {
-  color: var(--azul);
-  margin-bottom: 10px;
-}
-
-/* 🔹 Enlaces */
-a {
-  color: var(--azul);
+a, button {
+  transition: var(--transicion);
   text-decoration: none;
-  transition: color 0.3s ease;
 }
 
-a:hover {
-  color: var(--naranja);
-}
-
-/* 🔹 Botones generales */
-button {
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.2s ease;
-}
-
-button:hover {
+a:hover, button:hover {
   opacity: 0.9;
+  transform: scale(1.03);
 }
 
-/* 🔹 Barra de navegación */
-header {
-  background-color: var(--azul);
-  color: var(--blanco);
-  padding: 10px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* 🔹 Título principal con ícono 🛍️ */
-header h1 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.6rem;
-  color: var(--blanco);
-  font-weight: bold;
-  letter-spacing: 0.5px;
-  transition: transform 0.3s ease, color 0.3s ease;
-}
-
-header h1::before {
-  content: "";
-  display: inline-block;
-  transition: transform 0.3s ease;
-}
-
-/* 🔹 Animación hover */
-header h1:hover {
-  color: var(--naranja);
-  transform: scale(1.05);
-}
-
-header h1:hover::before {
-  transform: rotate(-10deg) scale(1.1);
-}
-
-/* 🔹 Enlaces dentro del header */
-header a {
-  color: var(--blanco) !important;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-header a:hover {
-  color: var(--naranja) !important;
-}
-
-/* 🔹 Footer */
-footer {
-  background-color: var(--fondo);
-  color: var(--gris);
-  text-align: center;
-  padding: 15px;
-  margin-top: 40px;
-  border-top: 1px solid var(--gris);
-}
-
-/* 🔹 Tarjetas de productos */
+/* Tarjetas y contenedores */
 .card {
-  background: var(--blanco);
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   transition: transform 0.2s ease;
 }
 
 .card:hover {
-  transform: scale(1.02);
+  transform: translateY(-4px);
 }
 
-/* 🔹 Botones institucionales */
-.btn-primary {
-  background-color: var(--naranja);
-  color: var(--blanco);
+/* Botones */
+button {
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
   border: none;
-  border-radius: 4px;
-  padding: 8px 12px;
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.btn-primary {
+  background: var(--color5);
+  color: #fff;
 }
 
 .btn-secondary {
-  background-color: var(--azul);
-  color: var(--blanco);
-  border: none;
-  border-radius: 4px;
-  padding: 8px 12px;
+  background: var(--color4);
+  color: #fff;
 }
 
-/* 🔹 Toast */
-.toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: var(--naranja);
-  color: var(--blanco);
-  padding: 15px 25px;
-  border-radius: 8px;
-  font-weight: bold;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  animation: fadeInOut 3s ease forwards;
-  z-index: 9999;
+.btn-accent {
+  background: var(--color3);
+  color: #fff;
 }
 
-@keyframes fadeInOut {
-  0% { opacity: 0; transform: translateY(10px); }
-  10%, 90% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(10px); }
+footer {
+  background: var(--color5);
+  color: white;
+  text-align: center;
+  padding: 15px;
+}
+
+/* 📱 Diseño Responsive */
+@media (max-width: 768px) {
+  section, .card, .navbar, .grid, .productsGrid {
+    padding: 10px;
+    flex-direction: column;
+  }
+
+  .productsGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  h1, h2 {
+    font-size: 1.3rem;
+  }
+
+  button {
+    font-size: 0.9rem;
+    padding: 8px 10px;
+  }
+
+  .filtrosContainer {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .productsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .navbar {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+  }
 }

@@ -1,7 +1,7 @@
+// ✅ /pages/api/auth/register.js
 import sql from "mssql";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { dbConfig } from "../../../lib/dbconfig"; // ✅ sube 3 niveles (auth → api → pages → lib)
+import { dbConfig } from "../../../lib/dbconfig"; // conexión a SQL Server
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -10,19 +10,18 @@ export default async function handler(req, res) {
 
   const { nombre, email, password, rol } = req.body;
 
-  if (!nombre || !email || !password) {
-    return res.status(400).json({ error: "Faltan campos requeridos" });
+  if (!nombre?.trim() || !email?.trim() || !password?.trim()) {
+    return res.status(400).json({ error: "Todos los campos son obligatorios" });
   }
 
   try {
-    // 🔹 Conexión a SQL Server
     const pool = await sql.connect(dbConfig);
 
     // 🔹 Verificar si el correo ya existe
     const userExist = await pool
       .request()
       .input("email", sql.VarChar, email)
-      .query("SELECT * FROM Usuarios WHERE Email = @email");
+      .query("SELECT 1 FROM Usuarios WHERE Email = @email");
 
     if (userExist.recordset.length > 0) {
       return res.status(400).json({ error: "El correo ya está registrado" });
@@ -31,27 +30,31 @@ export default async function handler(req, res) {
     // 🔹 Encriptar contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 🔹 Rol por defecto = cliente
+    // 🔹 Rol por defecto
     const userRole =
-      rol && (rol === "vendedor" || rol === "admin") ? rol : "cliente";
+      rol && ["vendedor", "admin"].includes(rol) ? rol : "cliente";
 
-    // 🔹 Insertar nuevo usuario (usa PasswordHash según tu tabla)
+    // 🔹 Registrar usuario
     await pool
       .request()
-      .input("nombre", sql.VarChar, nombre)
-      .input("email", sql.VarChar, email)
-      .input("password", sql.VarChar, hashedPassword)
-      .input("rol", sql.VarChar, userRole)
+      .input("nombre", sql.NVarChar, nombre)
+      .input("email", sql.NVarChar, email)
+      .input("password", sql.NVarChar, hashedPassword)
+      .input("rol", sql.NVarChar, userRole)
       .query(`
         INSERT INTO Usuarios (Nombre, Email, PasswordHash, Rol)
         VALUES (@nombre, @email, @password, @rol)
       `);
 
-    res
-      .status(200)
-      .json({ message: `Usuario registrado correctamente como ${userRole}.` });
+    res.status(200).json({
+      message: `Usuario registrado correctamente como ${userRole}`,
+      success: true,
+    });
   } catch (error) {
-    console.error("Error al registrar usuario:", error);
-    res.status(500).json({ error: "Error en el servidor" });
+    console.error("❌ Error al registrar usuario:", error);
+    res.status(500).json({
+      error: "Error interno en el servidor",
+      detalle: error.message,
+    });
   }
 }

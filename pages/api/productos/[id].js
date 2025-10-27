@@ -11,16 +11,23 @@ export default async function handler(req, res) {
   try {
     const pool = await getConnection();
 
-    // 🔹 Obtener producto con el nombre del vendedor
-    const result = await pool
+   const result = await pool
       .request()
       .input("id", id)
       .query(`
-        SELECT p.*, u.Nombre AS NombreVendedor
+        SELECT 
+          p.*, 
+          u.Nombre AS NombreVendedor,
+          ISNULL(AVG(c.Puntuacion), 0) AS PromedioRating
         FROM Productos p
         JOIN Usuarios u ON p.ID_Vendedor = u.ID_Usuario
+        LEFT JOIN Comentarios c ON p.ID_Producto = c.ID_Producto
         WHERE p.ID_Producto = @id
+        GROUP BY 
+          p.ID_Producto, p.ID_Vendedor, p.Nombre, p.Descripcion, 
+          p.Precio, p.Categoria, p.ImagenURL, p.FechaPublicacion, u.Nombre
       `);
+
 
     if (result.recordset.length === 0) {
       return res.status(404).json({ error: "Producto no encontrado" });

@@ -1,36 +1,54 @@
-import sql from "mssql";
-import jwt from "jsonwebtoken";
-import { dbConfig } from "../../../lib/dbconfig";
+import { getConnection } from "../../../lib/db";
+import cloudinary from "cloudinary";
+
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // Aumenta el límite a 10 MB
+    },
+  },
+};
 
 export default async function handler(req, res) {
-  if (req.method !== "PUT") {
-    return res.status(405).json({ error: "Método no permitido" });
-  }
+  if (req.method !== "PUT") return res.status(405).json({ error: "Método no permitido" });
 
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "Token no proporcionado" });
+  const { id, nombre, descripcion, precio, categoria, imagenURL } = req.body;
+
+  if (!id || !nombre || !precio || !categoria)
+    return res.status(400).json({ error: "Faltan campos obligatorios" });
+
+  const pool = await getConnection();
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { id, Nombre, Descripcion, Precio, Categoria, ImagenURL } = req.body;
+    let imageUrl = imagenURL;
 
-    const pool = await sql.connect(dbConfig);
+    // Si no hay imagen o está rota, usa la default
+    if (!imagenURL || imagenURL.trim() === "" || imagenURL.includes("default-imagen.png")) {
+      imageUrl = process.env.DEFAULT_PRODUCT_IMAGE || "https://via.placeholder.com/400x300.png?text=Producto+ONYX";
+    }
 
-    // 🔹 Si el usuario es admin puede editar cualquier producto
-    // 🔹 Si es vendedor, solo los suyos
-    const condicion =
-      decoded.rol === "admin"
-        ? ""
-        : `AND ID_Vendedor = ${decoded.id}`;
+    // Si se envía una imagen nueva base64, súbela a Cloudinary
+    if (imagenURL && imagenURL.startsWith("data:image")) {
+      const uploadResult = await cloudinary.v2.uploader.upload(imagenURL, {
+        folder: "tienda_online",
+      });
+      imageUrl = uploadResult.secure_url;
+    }
 
     await pool
       .request()
-      .input("id", sql.Int, id)
-      .input("Nombre", sql.NVarChar, Nombre)
-      .input("Descripcion", sql.NVarChar, Descripcion)
-      .input("Precio", sql.Decimal(10, 2), Precio)
-      .input("Categoria", sql.NVarChar, Categoria)
-      .input("ImagenURL", sql.NVarChar, ImagenURL)
+      .input("ID_Producto", id)
+      .input("Nombre", nombre)
+      .input("Descripcion", descripcion || "")
+      .input("Precio", precio)
+      .input("Categoria", categoria)
+      .input("ImagenURL", imageUrl)
       .query(`
         UPDATE Productos
         SET Nombre = @Nombre,
@@ -38,12 +56,12 @@ export default async function handler(req, res) {
             Precio = @Precio,
             Categoria = @Categoria,
             ImagenURL = @ImagenURL
-        WHERE ID_Producto = @id ${condicion}
+        WHERE ID_Producto = @ID_Producto
       `);
 
-    res.status(200).json({ message: "✅ Producto actualizado correctamente" });
+    res.status(200).json({ message: "✅ Producto actualizado correctamente", imageUrl });
   } catch (error) {
     console.error("Error al editar producto:", error);
-    res.status(500).json({ error: "Error al actualizar producto" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 }

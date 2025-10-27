@@ -11,15 +11,15 @@ export default async function handler(req, res) {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "Token no proporcionado" });
 
-    // ✅ Decodificar token
+    // Decodificar token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // ✅ Conexión a la base de datos
+    // Conexión a la base de datos
     const pool = await sql.connect(dbConfig);
 
     let query;
 
-    // ✅ Si el usuario es admin, traer todos los productos
+    // Si el usuario es admin, traer todos los productos
     if (decoded.rol === "admin") {
       query = `
         SELECT p.*, u.Nombre AS NombreVendedor
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
         ORDER BY p.FechaPublicacion DESC
       `;
     } else {
-      // ✅ Si no es admin, solo sus productos
+      // Si no es admin, solo sus productos
       query = `
         SELECT p.*, u.Nombre AS NombreVendedor
         FROM Productos p

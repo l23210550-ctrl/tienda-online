@@ -1,25 +1,22 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
 import Navbar from "../components/Navbar";
+import Toast from "../components/Toast";
 
 export default function EditarProducto() {
-  const [form, setForm] = useState({
-    Nombre: "",
-    Descripcion: "",
-    Precio: "",
-    Categoria: "",
-    ImagenURL: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [mensaje, setMensaje] = useState("");
-  const [imagenPreview, setImagenPreview] = useState("");
   const router = useRouter();
   const { id } = router.query;
 
-  const azul = "#1B396A";
-  const gris = "#807E82";
-  const naranja = "#FF8C00";
+  const [producto, setProducto] = useState(null);
+  const [nombre, setNombre] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+  const [precio, setPrecio] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [imagen, setImagen] = useState("");
+  const [preview, setPreview] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastVisible, setToastVisible] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -28,185 +25,193 @@ export default function EditarProducto() {
     axios
       .get(`/api/productos/${id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => {
-        setForm(res.data);
-        setImagenPreview(res.data.ImagenURL);
+        const p = res.data;
+        setProducto(p);
+        setNombre(p.Nombre);
+        setDescripcion(p.Descripcion);
+        setPrecio(p.Precio);
+        setCategoria(p.Categoria);
+        setPreview(p.ImagenURL);
       })
-      .catch(() => setMensaje("Error al cargar producto"));
+      .catch(() => mostrarToast("⚠️ Error al cargar producto"));
   }, [id]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const mostrarToast = (mensaje) => {
+    setToastMessage(mensaje);
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 3000);
   };
 
-  const handleFileChange = async (e) => {
+  const handleImage = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", "ml_default"); // usa tu upload preset en Cloudinary
-
-      const uploadRes = await axios.post(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        formData
-      );
-
-      const imageUrl = uploadRes.data.secure_url;
-      setForm({ ...form, ImagenURL: imageUrl });
-      setImagenPreview(imageUrl);
-      setMensaje("✅ Imagen subida correctamente");
-    } catch (error) {
-      console.error("Error al subir imagen:", error);
-      setMensaje("Error al subir la imagen");
-    } finally {
-      setLoading(false);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagen(reader.result);
+        setPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+
+    if (!nombre.trim() || !precio || !categoria.trim()) {
+      mostrarToast("⚠️ Por favor completa todos los campos obligatorios");
+      return;
+    }
+
     const token = localStorage.getItem("token");
 
     try {
       await axios.put(
         "/api/productos/editar",
-        { id, ...form },
+        {
+          id,
+          nombre: nombre.trim(),
+          descripcion: descripcion.trim(),
+          precio: parseFloat(precio),
+          categoria: categoria.trim(),
+          imagenURL: imagen || preview, // usa la existente si no se cambió
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMensaje("✅ Producto actualizado correctamente");
+      mostrarToast("✅ Producto actualizado correctamente");
       setTimeout(() => router.push("/mis-productos"), 1500);
     } catch (error) {
-      console.error(error);
-      setMensaje("Error al actualizar el producto");
-    } finally {
-      setLoading(false);
+      console.error("Error al editar producto:", error);
+      mostrarToast("❌ Error al actualizar el producto");
     }
   };
 
   return (
     <div style={styles.container}>
       <Navbar />
-      <div style={styles.formContainer}>
-        <h1 style={{ color: azul, textAlign: "center" }}>✏️ Editar Producto</h1>
+      <h1 style={styles.title}>✏️ Editar Producto</h1>
 
-        {mensaje && <p style={{ color: azul, fontWeight: "bold" }}>{mensaje}</p>}
-
+      <div style={styles.card}>
         <form onSubmit={handleSubmit} style={styles.form}>
-          <label>Nombre del producto:</label>
           <input
             type="text"
-            name="Nombre"
-            value={form.Nombre}
-            onChange={handleChange}
-            required
+            placeholder="Nombre del producto *"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
             style={styles.input}
           />
-
-          <label>Descripción:</label>
           <textarea
-            name="Descripcion"
-            value={form.Descripcion}
-            onChange={handleChange}
-            rows="3"
+            placeholder="Descripción (opcional)"
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
             style={styles.textarea}
-          ></textarea>
-
-          <label>Precio:</label>
+          />
           <input
             type="number"
-            name="Precio"
-            value={form.Precio}
-            onChange={handleChange}
-            required
+            placeholder="Precio *"
+            value={precio}
+            onChange={(e) => setPrecio(e.target.value)}
             style={styles.input}
           />
-
-          <label>Categoría:</label>
           <input
             type="text"
-            name="Categoria"
-            value={form.Categoria}
-            onChange={handleChange}
+            placeholder="Categoría *"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
             style={styles.input}
           />
 
-          <label>Imagen del producto:</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            style={styles.inputFile}
-          />
+          <label style={styles.label}>📸 Imagen del producto:</label>
+          <input type="file" accept="image/*" onChange={handleImage} style={styles.inputFile} />
+          {preview && <img src={preview} alt="Vista previa" style={styles.preview} />}
 
-          {imagenPreview && (
-            <img
-              src={imagenPreview}
-              alt="Vista previa"
-              style={styles.preview}
-            />
-          )}
-
-          <button type="submit" style={styles.submitBtn} disabled={loading}>
-            {loading ? "Guardando..." : "💾 Guardar cambios"}
+          <button type="submit" style={styles.button}>
+            💾 Guardar Cambios
           </button>
         </form>
       </div>
+
+      <Toast
+        message={toastMessage}
+        visible={toastVisible}
+        onClose={() => setToastVisible(false)}
+      />
     </div>
   );
 }
 
-// 🎨 Estilos TecNM + profesional
+/* 🎨 Estilos tipo Dashboard centrado ONYX */
 const styles = {
   container: {
-    fontFamily: "sans-serif",
-    background: "#f5f5f5",
+    background: "var(--color1)",
+    color: "#fff",
     minHeight: "100vh",
-    paddingBottom: "40px",
+    padding: "20px",
+    fontFamily: "Poppins, sans-serif",
   },
-  formContainer: {
-    maxWidth: "500px",
+  title: {
+    textAlign: "center",
+    color: "var(--color5)",
+    fontSize: "2rem",
+    fontWeight: "bold",
+    marginBottom: "20px",
+  },
+  card: {
     background: "#fff",
-    margin: "40px auto",
-    padding: "25px",
-    borderRadius: "10px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+    color: "#000",
+    maxWidth: "600px",
+    margin: "0 auto",
+    padding: "30px",
+    borderRadius: "16px",
+    boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
   },
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
+    gap: "15px",
+  },
+  label: {
+    alignSelf: "flex-start",
+    marginBottom: "-5px",
+    fontWeight: "bold",
+    color: "var(--color4)",
   },
   input: {
+    width: "100%",
     padding: "10px",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
+    borderRadius: "8px",
+    border: "1px solid var(--color4)",
+    fontSize: "1rem",
   },
   textarea: {
+    width: "100%",
+    height: "90px",
     padding: "10px",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
+    borderRadius: "8px",
+    border: "1px solid var(--color4)",
+    resize: "none",
   },
   inputFile: {
-    padding: "6px",
+    alignSelf: "flex-start",
+    marginBottom: "10px",
   },
   preview: {
     width: "100%",
-    height: "200px",
+    maxHeight: "240px",
     objectFit: "cover",
-    borderRadius: "8px",
-    marginTop: "10px",
+    borderRadius: "10px",
+    marginBottom: "15px",
+    border: "2px solid var(--color3)",
   },
-  submitBtn: {
-    background: "#FF8C00",
+  button: {
+    background: "var(--color5)",
     color: "#fff",
     border: "none",
-    borderRadius: "5px",
-    padding: "10px",
+    padding: "12px 15px",
+    borderRadius: "8px",
     cursor: "pointer",
     fontWeight: "bold",
-    transition: "background 0.2s",
+    fontSize: "1rem",
+    width: "100%",
+    transition: "background 0.3s ease",
   },
 };

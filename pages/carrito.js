@@ -1,223 +1,202 @@
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
+import axios from "axios";
 import Navbar from "../components/Navbar";
 import Toast from "../components/Toast";
-import { useState } from "react";
 
 export default function Carrito() {
-  const { cart, total, removeFromCart, updateQuantity, clearCart } = useCart();
+  const { cart, removeFromCart, clearCart } = useCart();
+  const [productos, setProductos] = useState([]);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
-  const handleClearCart = () => {
-    clearCart();
-    setToastMessage("🗑️ Carrito vaciado correctamente");
+  // 🧩 Verificar que los productos sigan existiendo
+  useEffect(() => {
+    const verificarProductos = async () => {
+      try {
+        const res = await axios.get("/api/productos");
+        const productosActuales = res.data.map((p) => p.ID_Producto);
+        const carritoGuardado = JSON.parse(localStorage.getItem("carrito") || "[]");
+
+        // Filtramos los productos que todavía existen
+        const carritoFiltrado = carritoGuardado.filter((p) =>
+          productosActuales.includes(p.ID_Producto)
+        );
+
+        if (carritoFiltrado.length !== carritoGuardado.length) {
+          clearCart();
+          carritoFiltrado.forEach((p) => {
+            localStorage.setItem("carrito", JSON.stringify(carritoFiltrado));
+          });
+          setToastMessage("⚠️ Se eliminaron productos que ya no están disponibles.");
+          setToastVisible(true);
+        }
+
+        setProductos(carritoFiltrado);
+      } catch (err) {
+        console.error("Error al verificar productos:", err);
+      }
+    };
+
+    verificarProductos();
+  }, [cart]);
+
+  // 🗑️ Eliminar un producto del carrito
+  const eliminarProducto = (id) => {
+    removeFromCart(id);
+    setToastMessage("🗑️ Producto eliminado del carrito");
     setToastVisible(true);
   };
 
-  const handleCheckout = () => {
-    clearCart();
-    setToastMessage("✅ Compra finalizada con éxito");
-    setToastVisible(true);
-  };
+  // 💰 Calcular total
+  const total = productos.reduce((acc, p) => acc + (p.Precio || 0), 0);
 
   return (
     <div style={styles.container}>
-      {/* 🔹 Barra de navegación */}
       <Navbar />
+      <h1 style={styles.title}>🛒 Tu Carrito</h1>
 
-      <div style={styles.content}>
-        <h2 style={styles.title}>🛒 Carrito de Compras</h2>
-
-        {cart.length === 0 ? (
-          <p style={{ textAlign: "center", color: styles.gray }}>
-            No hay productos en el carrito.
-          </p>
-        ) : (
-          <>
-            {cart.map((item) => (
-              <div key={item.ID_Producto} style={styles.item}>
-                <img
-                  src={item.ImagenURL || "/placeholder.png"}
-                  alt={item.Nombre}
-                  style={styles.image}
-                />
-
-                <div style={styles.info}>
-                  <h3 style={styles.name}>{item.Nombre}</h3>
-                  <p style={{ color: styles.gray }}>${item.Precio}</p>
-
-                  {/* 🔹 Controles de cantidad */}
-                  <div style={styles.controls}>
-                    <button
-                      style={styles.qtyBtn}
-                      onClick={() =>
-                        updateQuantity(item.ID_Producto, item.cantidad - 1)
-                      }
-                    >
-                      -
-                    </button>
-                    <span>{item.cantidad}</span>
-                    <button
-                      style={styles.qtyBtn}
-                      onClick={() =>
-                        updateQuantity(item.ID_Producto, item.cantidad + 1)
-                      }
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  {/* 🔹 Botón de eliminar */}
-                  <button
-                    style={styles.removeBtn}
-                    onClick={() => removeFromCart(item.ID_Producto)}
-                  >
-                    ❌ Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            {/* 🔹 Resumen del carrito */}
-            <div style={styles.summary}>
-              <h3 style={styles.total}>Total: ${total.toFixed(2)}</h3>
-
-              <div>
-                <button style={styles.checkoutBtn} onClick={handleCheckout}>
-                  💳 Finalizar Compra
-                </button>
-                <button style={styles.clearBtn} onClick={handleClearCart}>
-                  🗑️ Vaciar Carrito
+      {productos.length === 0 ? (
+        <p style={styles.emptyMsg}>Tu carrito está vacío.</p>
+      ) : (
+        <div style={styles.grid}>
+          {productos.map((producto) => (
+            <div key={producto.ID_Producto} style={styles.card}>
+              <img
+                src={producto.ImagenURL || "/placeholder.png"}
+                alt={producto.Nombre}
+                style={styles.image}
+              />
+              <div style={styles.info}>
+                <h3 style={styles.name}>{producto.Nombre}</h3>
+                <p style={styles.desc}>{producto.Descripcion}</p>
+                <p style={styles.price}>${producto.Precio}</p>
+                <button
+                  style={styles.removeBtn}
+                  onClick={() => eliminarProducto(producto.ID_Producto)}
+                >
+                  ❌ Quitar
                 </button>
               </div>
             </div>
-          </>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* 🔹 Toast */}
+      {productos.length > 0 && (
+        <div style={styles.summary}>
+          <h2>Total: ${total.toFixed(2)}</h2>
+          <button style={styles.checkoutBtn} onClick={() => alert("🧾 Función de pago próximamente...")}>
+            Proceder al pago
+          </button>
+          <button style={styles.clearBtn} onClick={() => clearCart()}>
+            Vaciar carrito
+          </button>
+        </div>
+      )}
+
       <Toast
         message={toastMessage}
         visible={toastVisible}
         onClose={() => setToastVisible(false)}
       />
-
-      {/* 🔹 Footer */}
-      <footer style={styles.footer}>
-        <p>© {new Date().getFullYear()} Tienda ITT - Proyecto Académico</p>
-      </footer>
     </div>
   );
 }
 
-// 🎨 Colores institucionales TecNM
-const azul = "#1B396A";
-const gris = "#807E82";
-const negro = "#000";
-const naranja = "#FF8C00";
-
+/* 🎨 Estilos ONYX */
 const styles = {
   container: {
-    fontFamily: "sans-serif",
+    background: "var(--color1)",
+    color: "#fff",
     minHeight: "100vh",
-    background: "#f5f5f5",
-  },
-  content: {
-    maxWidth: "900px",
-    margin: "30px auto",
-    background: "#fff",
     padding: "20px",
-    borderRadius: "8px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+    fontFamily: "Poppins, sans-serif",
   },
   title: {
-    color: azul,
-    marginBottom: "20px",
     textAlign: "center",
+    color: "var(--color5)",
+    fontSize: "1.8rem",
+    marginBottom: "20px",
   },
-  item: {
-    display: "flex",
+  emptyMsg: {
+    textAlign: "center",
+    color: "#fff",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
     gap: "20px",
-    borderBottom: `1px solid ${gris}`,
-    paddingBottom: "10px",
-    marginBottom: "15px",
+    padding: "20px",
+  },
+  card: {
+    background: "#fff",
+    color: "#000",
+    borderRadius: "10px",
+    display: "flex",
     alignItems: "center",
+    padding: "15px",
+    boxShadow: "0 3px 8px rgba(0,0,0,0.2)",
   },
   image: {
-    width: "120px",
-    height: "120px",
+    width: "100px",
+    height: "100px",
     objectFit: "cover",
     borderRadius: "8px",
-    border: `2px solid ${azul}`,
+    marginRight: "15px",
   },
   info: {
     flex: 1,
   },
   name: {
-    color: azul,
-    margin: "5px 0",
+    color: "var(--color4)",
+    marginBottom: "4px",
   },
-  controls: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    marginTop: "8px",
+  desc: {
+    color: "#555",
+    fontSize: "0.9rem",
   },
-  qtyBtn: {
-    background: naranja,
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    padding: "5px 10px",
-    cursor: "pointer",
+  price: {
+    color: "var(--color3)",
     fontWeight: "bold",
-    transition: "all 0.2s ease",
   },
   removeBtn: {
-    marginTop: "8px",
-    background: "transparent",
-    color: "red",
+    background: "var(--color5)",
+    color: "#fff",
     border: "none",
+    borderRadius: "5px",
+    padding: "6px 10px",
     cursor: "pointer",
     fontWeight: "bold",
+    marginTop: "8px",
   },
   summary: {
-    textAlign: "right",
-    marginTop: "20px",
-    borderTop: `2px solid ${azul}`,
-    paddingTop: "15px",
-  },
-  total: {
-    fontSize: "1.3rem",
-    color: azul,
-    marginBottom: "10px",
+    background: "#fff",
+    color: "#000",
+    borderRadius: "10px",
+    padding: "20px",
+    textAlign: "center",
+    maxWidth: "400px",
+    margin: "30px auto",
+    boxShadow: "0 3px 8px rgba(0,0,0,0.2)",
   },
   checkoutBtn: {
-    background: naranja,
+    background: "var(--color4)",
     color: "#fff",
-    padding: "10px 15px",
     border: "none",
-    borderRadius: "4px",
+    borderRadius: "8px",
+    padding: "10px 20px",
     cursor: "pointer",
     fontWeight: "bold",
     marginRight: "10px",
-    transition: "transform 0.2s ease, background 0.2s ease",
   },
   clearBtn: {
-    background: gris,
+    background: "var(--color3)",
     color: "#fff",
-    padding: "10px 15px",
     border: "none",
-    borderRadius: "4px",
+    borderRadius: "8px",
+    padding: "10px 20px",
     cursor: "pointer",
-    transition: "transform 0.2s ease, background 0.2s ease",
+    fontWeight: "bold",
   },
-  footer: {
-    textAlign: "center",
-    padding: "15px",
-    background: "#f0f0f0",
-    marginTop: "40px",
-  },
-  gray: gris,
 };

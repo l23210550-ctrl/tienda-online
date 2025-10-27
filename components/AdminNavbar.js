@@ -7,9 +7,6 @@ export default function AdminNavbar() {
   const [mostrarPerfil, setMostrarPerfil] = useState(false);
   const router = useRouter();
 
-  const azul = "#1B396A";
-  const naranja = "#FF8C00";
-
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
@@ -18,12 +15,14 @@ export default function AdminNavbar() {
   return (
     <header style={styles.navbar}>
       <div style={styles.leftSection}>
-        {/* 🛍️ Logo principal con enlace al inicio */}
-        <Link href="/" style={{ textDecoration: "none", color: "white" }}>
-          <h1 style={styles.logo}>🛍️ Tienda ITT</h1>
+        {/* Logo ONYX */}
+      <h1 style={styles.logo}>
+        <Link href="/" style={styles.logoLink}>
+          ONYX<span style={styles.diamond}>◆</span>
         </Link>
+      </h1>
 
-        {/* ⚙️ Enlace al panel admin (solo visible para admin) */}
+        {/* ⚙️ Panel admin visible solo para admin */}
         {user?.rol === "admin" && (
           <Link href="/admin" style={styles.adminBtn}>
             ⚙️ Panel Admin
@@ -107,54 +106,62 @@ export default function AdminNavbar() {
         )}
       </nav>
 
-      {/* ✅ Efecto hover con CSS-in-JS */}
+      {/* Hover animado */}
       <style jsx>{`
         a:hover {
           opacity: 0.9;
         }
         .admin-btn:hover {
-          background: #e67e00;
-          box-shadow: 0 0 10px rgba(255, 140, 0, 0.6);
-          transform: scale(1.03);
-          transition: all 0.2s ease-in-out;
+          background: var(--color3);
+          box-shadow: 0 0 10px rgba(175, 96, 126, 0.7);
+          transform: scale(1.05);
+          transition: all 0.3s ease-in-out;
         }
       `}</style>
     </header>
   );
 }
 
-// 🎨 Estilos TecNM
+/* 🎨 Estilos con paleta rosa-vino ONYX */
 const styles = {
   navbar: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    background: "#1B396A",
-    padding: "10px 20px",
+    background: "var(--color5)",
+    padding: "12px 20px",
     color: "#fff",
+    boxShadow: "0 3px 8px rgba(0,0,0,0.2)",
   },
   leftSection: {
     display: "flex",
     alignItems: "center",
     gap: "15px",
   },
-  logo: { margin: 0, fontSize: "1.5rem", cursor: "pointer" },
+  logo: {
+    margin: 0,
+    fontSize: "1.6rem",
+    fontWeight: "bold",
+    letterSpacing: "1px",
+    cursor: "pointer",
+  },
   adminBtn: {
-    background: "#FF8C00",
+    background: "var(--color4)",
     color: "#fff",
     padding: "6px 12px",
-    borderRadius: "5px",
+    borderRadius: "8px",
     textDecoration: "none",
     fontWeight: "bold",
     fontSize: "0.9rem",
     transition: "all 0.3s ease",
-    boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
   },
   navLink: {
     marginLeft: "15px",
     color: "#fff",
     textDecoration: "none",
     fontWeight: "bold",
+    transition: "color 0.3s ease",
   },
   userButton: {
     background: "none",
@@ -187,10 +194,10 @@ const styles = {
     cursor: "pointer",
   },
   logoutBtn: {
-    background: "red",
+    background: "var(--color4)",
     color: "#fff",
     border: "none",
-    borderRadius: "4px",
+    borderRadius: "6px",
     padding: "8px",
     cursor: "pointer",
     width: "100%",

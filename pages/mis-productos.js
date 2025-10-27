@@ -13,10 +13,6 @@ export default function MisProductos() {
   const [user, setUser] = useState(null);
   const router = useRouter();
 
-  const azul = "#1B396A";
-  const gris = "#807E82";
-  const naranja = "#FF8C00";
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -37,34 +33,49 @@ export default function MisProductos() {
   };
 
   const ejecutarAccion = async () => {
-    if (!productoSeleccionado) return;
-    const token = localStorage.getItem("token");
+  if (!productoSeleccionado) return;
+  const token = localStorage.getItem("token");
 
-    if (accion === "eliminar") {
-      try {
-        await axios.delete("/api/productos/eliminar", {
-          headers: { Authorization: `Bearer ${token}` },
-          data: { id: productoSeleccionado.ID_Producto },
-        });
-        setProductos(productos.filter((p) => p.ID_Producto !== productoSeleccionado.ID_Producto));
-        setMensaje("Producto eliminado correctamente");
-      } catch {
-        setMensaje("Error al eliminar producto");
-      }
-    } else if (accion === "editar") {
-      router.push(`/editar-producto?id=${productoSeleccionado.ID_Producto}`);
+  if (accion === "eliminar") {
+    try {
+      await axios.delete("/api/productos/eliminar", {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { id: productoSeleccionado.ID_Producto },
+      });
+
+      // 🔹 Quita el producto del listado visual
+      setProductos((prev) =>
+        prev.filter((p) => p.ID_Producto !== productoSeleccionado.ID_Producto)
+      );
+
+      // 🔹 Quita también del carrito local si existe
+      const carrito = JSON.parse(localStorage.getItem("carrito") || "[]");
+      const carritoActualizado = carrito.filter(
+        (item) => item.ID_Producto !== productoSeleccionado.ID_Producto
+      );
+      localStorage.setItem("carrito", JSON.stringify(carritoActualizado));
+
+      // 🔹 Mensaje visual de confirmación
+      setMensaje("✅ Producto eliminado correctamente y quitado del carrito");
+    } catch (err) {
+      console.error("Error al eliminar producto:", err);
+      setMensaje("❌ Error al eliminar producto");
     }
+  } else if (accion === "editar") {
+    router.push(`/editar-producto?id=${productoSeleccionado.ID_Producto}`);
+  }
 
-    setModalVisible(false);
-  };
+  setModalVisible(false);
+  setMenuAbierto(null);
+};
+
 
   return (
     <div style={styles.container}>
       <Navbar />
       <div style={styles.header}>
-        <h1 style={{ color: azul }}>🧾 Mis Productos</h1>
+        <h1 style={{ color: "var(--color5)" }}>🧾 Mis Productos</h1>
 
-        {/* 🔹 Botón para crear nueva publicación */}
         {(user?.rol === "vendedor" || user?.rol === "admin") && (
           <button
             style={styles.newBtn}
@@ -85,16 +96,16 @@ export default function MisProductos() {
               alt={p.Nombre}
               style={styles.image}
             />
-            <h3 style={{ color: azul, textTransform: "uppercase" }}>{p.Nombre}</h3>
-            <p style={{ color: gris }}>{p.Descripcion}</p>
+            <h3 style={{ color: "var(--color4)", textTransform: "uppercase" }}>{p.Nombre}</h3>
+            <p style={{ color: "#555" }}>{p.Descripcion}</p>
             <p>
               <strong>${p.Precio}</strong>
             </p>
-            <p style={{ color: gris, fontSize: "0.9rem" }}>
+            <p style={{ color: "gray", fontSize: "0.9rem" }}>
               Publicado por: <strong>{p.NombreVendedor}</strong>
             </p>
 
-            <div style={{ position: "relative" }}>
+            <div style={styles.menuContainer}>
               <button
                 onClick={() =>
                   setMenuAbierto(menuAbierto === p.ID_Producto ? null : p.ID_Producto)
@@ -105,7 +116,7 @@ export default function MisProductos() {
               </button>
 
               {menuAbierto === p.ID_Producto && (
-                <div style={styles.dropdown}>
+                <div style={styles.dropdown} className="fade-slide">
                   {(user?.rol === "admin" || user?.id === p.ID_Vendedor) && (
                     <>
                       <button
@@ -143,7 +154,7 @@ export default function MisProductos() {
         ))}
       </div>
 
-      {/* 🔹 Modal de confirmación */}
+      {/* Modal de confirmación */}
       {modalVisible && productoSeleccionado && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
@@ -152,21 +163,18 @@ export default function MisProductos() {
               alt={productoSeleccionado.Nombre}
               style={styles.modalImage}
             />
-            <h2 style={{ color: azul }}>{productoSeleccionado.Nombre}</h2>
+            <h2 style={{ color: "var(--color5)" }}>{productoSeleccionado.Nombre}</h2>
             <p>{productoSeleccionado.Descripcion}</p>
             <p style={{ fontWeight: "bold" }}>${productoSeleccionado.Precio}</p>
 
-            <p style={{ color: gris, marginBottom: "10px" }}>
+            <p style={{ color: "gray", marginBottom: "10px" }}>
               {accion === "eliminar"
                 ? "¿Seguro que deseas eliminar este producto? Esta acción no se puede deshacer."
                 : "¿Quieres editar los detalles de este producto?"}
             </p>
 
             <div style={styles.modalActions}>
-              <button
-                onClick={() => setModalVisible(false)}
-                style={styles.cancelBtn}
-              >
+              <button onClick={() => setModalVisible(false)} style={styles.cancelBtn}>
                 Cancelar
               </button>
               <button
@@ -183,12 +191,12 @@ export default function MisProductos() {
   );
 }
 
-// 🎨 Estilos TecNM + botón destacado
+/* 🎨 Estilos ONYX */
 const styles = {
   container: {
     padding: "20px",
-    fontFamily: "sans-serif",
-    background: "#f5f5f5",
+    fontFamily: "Poppins, sans-serif",
+    background: "var(--color1)",
     minHeight: "100vh",
   },
   header: {
@@ -198,28 +206,28 @@ const styles = {
     marginBottom: "20px",
   },
   newBtn: {
-    background: "#FF8C00",
+    background: "var(--color5)",
     color: "#fff",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "8px",
     padding: "10px 16px",
     fontWeight: "bold",
     cursor: "pointer",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-    transition: "background 0.3s, transform 0.2s",
+    boxShadow: "0 3px 8px rgba(0,0,0,0.2)",
+    transition: "transform 0.2s ease, background 0.3s ease",
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
     gap: "20px",
   },
   card: {
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    padding: "10px",
-    background: "#fff",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
     position: "relative",
+    borderRadius: "12px",
+    background: "#fff",
+    padding: "15px",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
+    overflow: "hidden",
   },
   image: {
     width: "100%",
@@ -227,25 +235,29 @@ const styles = {
     objectFit: "cover",
     borderRadius: "8px",
   },
-  menuBtn: {
+  menuContainer: {
     position: "absolute",
     top: "10px",
     right: "10px",
+  },
+  menuBtn: {
     background: "none",
     border: "none",
     fontSize: "1.4rem",
     cursor: "pointer",
+    color: "var(--color5)",
   },
   dropdown: {
     position: "absolute",
-    right: "10px",
-    top: "40px",
+    right: "0",
+    top: "30px",
     background: "#fff",
-    border: "1px solid #ccc",
-    borderRadius: "8px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+    border: "1px solid #eee",
+    borderRadius: "10px",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+    animation: "fadeSlide 0.3s ease forwards",
     zIndex: 10,
-    width: "220px",
+    width: "210px",
   },
   optionBtn: {
     display: "block",
@@ -256,6 +268,7 @@ const styles = {
     padding: "10px",
     cursor: "pointer",
     color: "#000",
+    transition: "background 0.3s ease, color 0.3s ease",
   },
   modalOverlay: {
     position: "fixed",
@@ -263,26 +276,23 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: "rgba(0,0,0,0.5)",
+    background: "rgba(0,0,0,0.6)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000,
   },
   modal: {
     background: "#fff",
-    borderRadius: "10px",
-    padding: "20px",
-    maxWidth: "400px",
+    borderRadius: "12px",
+    padding: "25px",
+    width: "380px",
     textAlign: "center",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
   },
   modalImage: {
     width: "100%",
     height: "180px",
     objectFit: "cover",
     borderRadius: "8px",
-    marginBottom: "10px",
   },
   modalActions: {
     display: "flex",
@@ -290,31 +300,27 @@ const styles = {
     marginTop: "15px",
   },
   cancelBtn: {
-    background: "#807E82",
+    background: "var(--color3)",
     color: "#fff",
     border: "none",
     borderRadius: "5px",
     padding: "8px 12px",
     cursor: "pointer",
-    flex: 1,
-    marginRight: "5px",
   },
   deleteBtn: {
-    background: "red",
+    background: "#e74c3c",
     color: "#fff",
     border: "none",
     borderRadius: "5px",
     padding: "8px 12px",
     cursor: "pointer",
-    flex: 1,
   },
   editBtn: {
-    background: "#FF8C00",
+    background: "var(--color5)",
     color: "#fff",
     border: "none",
     borderRadius: "5px",
     padding: "8px 12px",
     cursor: "pointer",
-    flex: 1,
   },
 };
